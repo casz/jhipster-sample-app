@@ -30,8 +30,22 @@ pipeline {
       }
     }
     stage('Test Backend') {
+      agent {
+        docker {
+          image 'maven:3-alpine'
+          args '-v $HOME/.m2:/root/.m2'
+        }
+      }
       steps {
-        echo 'Testing some stuff'
+        unstash 'ws'
+        unstash 'war'
+        sh './mvnw -B test findbugs:findbugs'
+      }
+      post {
+        success {
+          junit '**/surefire-reports/**/*.xml'
+          findbugs pattern: 'target/**/findbugsXml.xml', unstableNewAll: '0' //unstableTotalAll: '0'
+        }
       }
     }
     stage('More Tests') {
